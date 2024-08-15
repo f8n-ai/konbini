@@ -24,8 +24,6 @@ import { z } from 'zod'
 const ConfigSchema = z.object({
   github: z.object({
     token: z.string().min(1, 'GitHub token is required'),
-    owner: z.string().min(1, 'GitHub owner is required'),
-    repo: z.string().min(1, 'GitHub repo is required'),
   }),
   anthropic: z.object({
     apiKey: z.string().min(1, 'Anthropic API key is required'),
@@ -50,8 +48,6 @@ export function getConfig(): Config {
   const config = {
     github: {
       token: process.env.GITHUB_TOKEN,
-      owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
     },
     anthropic: {
       apiKey: process.env.ANTHROPIC_API_KEY,

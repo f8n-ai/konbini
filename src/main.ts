@@ -8,9 +8,8 @@
  * The main function follows these steps:
  * 1. Load and validate configuration
  * 2. Check Git status and handle staging if necessary
- * 3. Fetch relevant issue data from GitHub (if applicable)
- * 4. Generate a commit message using the Anthropic API
- * 5. Prompt the user for confirmation and apply the commit
+ * 3. Generate a commit message using the Anthropic API
+ * 4. Prompt the user for confirmation and apply the commit
  *
  * @module main
  */
@@ -20,9 +19,8 @@ import { getConfig } from './config'
 import { createCommit, stageChanges } from './git/commit'
 import { getGitDiff } from './git/diff'
 import { getGitStatus } from './git/status'
-import { getIssueData } from './github/issue'
 import logger from './logger'
-import { confirm, promptUser } from './prompts/prompts'
+import { confirm } from './prompts/prompts'
 
 async function main() {
   try {
@@ -38,12 +36,8 @@ async function main() {
       }
     }
 
-    const issueId = await promptUser('Enter issue ID (optional):')
-    const issueData = issueId ? await getIssueData(config.github, Number.parseInt(issueId)) : null
-    logger.info('Issue data fetched', [])
-
     const diff = await getGitDiff()
-    const commitMessage = await generateCommitMessage({ diff, issue: issueData })
+    const commitMessage = await generateCommitMessage({ diff })
     logger.info('Commit message generated')
 
     const useGeneratedMessage = await confirm('Use this commit message?')

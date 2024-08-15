@@ -36,23 +36,16 @@ export interface GitDiff {
 }
 
 /**
- * Represents GitHub credentials
+ * Represents the type of GitHub authentication.
  */
-export interface GitHubCredentials {
-  token: string
-  owner: string
-  repo: string
-}
+type GitHubAuthType = 'ssh' | 'token'
 
 /**
- * Represents GitHub issue data
+ * Represents GitHub credentials.
  */
-export interface GitHubIssue {
-  id: string
-  title: string
-  body: string
-  labels: string[]
-  comments: GitHubComment[]
+export interface GitHubCredentials {
+  type: GitHubAuthType
+  value: string
 }
 
 /**
@@ -69,7 +62,6 @@ export interface GitHubComment {
  */
 export interface CommitMessageParams {
   diff: GitDiff
-  issue: GitHubIssue | null
 }
 
 /**

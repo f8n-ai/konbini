@@ -59,7 +59,7 @@ export async function generateCommitMessage(params: CommitMessageParams): Promis
  * @returns The constructed prompt string.
  */
 function constructPrompt(params: CommitMessageParams): string {
-  let prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content, JSON.stringify(params.issue))
+  let prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content)
 
   // Add information about changed files
   prompt += `\n\nChanged files:\n${params.diff.files.join('\n')}`

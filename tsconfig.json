@@ -15,6 +15,6 @@
     "emitDeclarationOnly": true,
     "declaration": true
   },
-  "include": ["src/**/*", "src/prompts/prompts.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
