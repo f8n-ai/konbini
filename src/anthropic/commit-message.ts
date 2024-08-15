@@ -45,6 +45,11 @@ export async function generateCommitMessage(params: CommitMessageParams): Promis
 
     const generatedMessage = parseResponse(response.content[0].text)
     logger.info('Commit message generated successfully')
+    logger.info(`Generated commit message:
+${generatedMessage.subject}
+
+${generatedMessage.body}
+`)
     return generatedMessage
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

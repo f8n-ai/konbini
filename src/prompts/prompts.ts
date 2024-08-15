@@ -84,26 +84,22 @@ export const KONBINI_PROMPTS = {
     return `
 Human: Generate a commit message based on the following code diff. Analyze the information and create a commit message in the style of John Carmack with an 80-character description and up to 3 bullet points of the most valuable info for future engineers. Use this format:
 
-<commit message>
 [80-character description]
 
 • [Key point 1]
 • [Key point 2]
 • [Key point 3]
-</commit message>
 
 Diff:
 ${diff}
 
-A: Certainly! I'll analyze the provided code diff to generate a commit message in John Carmack's style. Here's the commit message based on the information:
+A: Certainly! I'll analyze the provided code diff to generate a commit message in John Carmack's style. Here's an example commit message based on the information:
 
-<commit message>
 Implement [feature/fix] to address [core issue] (adjust to fit 80 characters)
 
 • [Key technical detail or implication #1]
 • [Key technical detail or implication #2]
 • [Key technical detail or implication #3]
-</commit message>
 `
   },
 
