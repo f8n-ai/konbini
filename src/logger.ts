@@ -14,13 +14,14 @@
  * import logger from './logger';
  * logger.info('This is an info message');
  * logger.error('This is an error message');
+ * logger.errorWithStack('Error occurred', new Error('Details here'));
  *
  * @module logger
  */
 
 import winston from 'winston'
 
-const logger = winston.createLogger({
+const winstonLogger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
     winston.format.timestamp(),
@@ -36,12 +37,18 @@ const logger = winston.createLogger({
   ],
 })
 
+interface CustomLogger extends winston.Logger {
+  errorWithStack(message: string, error: unknown): void
+}
+
+const logger: CustomLogger = winstonLogger as CustomLogger
+
 /**
- * Wrapper function to ensure consistent logging format for errors
+ * Custom method to log errors with stack traces
  * @param message - The error message to log
  * @param error - The error object
  */
-logger.logError = (message: string, error: unknown) => {
+logger.errorWithStack = (message: string, error: unknown): void => {
   if (error instanceof Error) {
     logger.error(`${message}: ${error.message}`)
     if (error.stack) {
