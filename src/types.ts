@@ -69,7 +69,7 @@ export interface GitHubComment {
  */
 export interface CommitMessageParams {
   diff: GitDiff
-  issue?: GitHubIssue
+  issue: GitHubIssue | null
 }
 
 /**

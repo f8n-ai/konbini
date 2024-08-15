@@ -38,9 +38,9 @@ async function main() {
       }
     }
 
-    const issueId = await promptUser('Enter issue ID (optional):', type: '')
-    const issueData = issueId ? await getIssueData(config.github, issueId : null
-    logger.info('Issue data fetched')
+    const issueId = await promptUser('Enter issue ID (optional):')
+    const issueData = issueId ? await getIssueData(config.github, Number.parseInt(issueId)) : null
+    logger.info('Issue data fetched', [])
 
     const diff = await getGitDiff()
     const commitMessage = await generateCommitMessage({ diff, issue: issueData })

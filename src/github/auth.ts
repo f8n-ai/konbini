@@ -12,7 +12,7 @@
  */
 
 import { Octokit } from '@octokit/rest'
-import { GitHubCredentials } from '../../types'
+import { GitHubCredentials } from '../types'
 import { GitHubError } from '../errors'
 import logger from '../logger'
 

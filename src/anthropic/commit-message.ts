@@ -12,10 +12,10 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
-import { CommitMessageParams, GeneratedCommitMessage } from '../../types'
+import { CommitMessageParams, GeneratedCommitMessage } from '../types'
 import { AnthropicError } from '../errors'
 import logger from '../logger'
-import { KONBINI_PROMPTS } from '../src/prompts'
+import { KONBINI_PROMPTS } from '../prompts/prompts'
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({

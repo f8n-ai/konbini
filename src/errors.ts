@@ -14,11 +14,13 @@
  * @module errors
  */
 
+import chalk from 'chalk'
+
 /**
  * Base class for custom errors in the application.
  * Extends the built-in Error class with a name property.
  */
-class CustomError extends Error {
+export class CustomError extends Error {
   constructor(message: string) {
     super(message)
     this.name = this.constructor.name
@@ -26,20 +28,34 @@ class CustomError extends Error {
 }
 
 /**
- * Error class for Git-related errors.
+ * Custom error for Git-related issues.
  */
-export class GitError extends CustomError {}
+export class GitError extends Error {
+  constructor(message: string) {
+    super(chalk.red(message))
+    this.name = chalk.red('GitError')
+  }
+}
 
 /**
- * Error class for GitHub API-related errors.
+ * Custom error for Anthropic API-related issues.
  */
-export class GitHubError extends CustomError {}
+export class AnthropicError extends Error {
+  constructor(message: string) {
+    super(chalk.red(message))
+    this.name = chalk.red('AnthropicError')
+  }
+}
 
 /**
- * Error class for Anthropic API-related errors.
+ * Custom error for GitHub API-related issues.
  */
-export class AnthropicError extends CustomError {}
-
+export class GitHubError extends Error {
+  constructor(message: string) {
+    super(chalk.red(message))
+    this.name = chalk.red('GitHubError')
+  }
+}
 /**
  * Error class for configuration-related errors.
  */
