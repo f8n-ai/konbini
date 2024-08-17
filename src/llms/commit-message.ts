@@ -11,16 +11,10 @@
  * @module anthropic/commit-message
  */
 
-import Anthropic from '@anthropic-ai/sdk'
 import { CommitMessageParams, GeneratedCommitMessage } from '../types'
-import { AnthropicError } from '../errors'
+import { anthropic, AnthropicError } from './anthropic'
 import logger from '../logger'
 import { KONBINI_PROMPTS } from '../prompts/prompts'
-
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 /**
  * Generates a commit message using the Anthropic API.

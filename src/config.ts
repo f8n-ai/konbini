@@ -25,9 +25,14 @@ const ConfigSchema = z.object({
   github: z.object({
     token: z.string().min(1, 'GitHub token is required'),
   }),
+  mod
   anthropic: z.object({
     apiKey: z.string().min(1, 'Anthropic API key is required'),
   }),
+  excludedFilePatterns: z
+    .array(z.string())
+    .default(['*.log', '*.min.js', '*.min.css', 'dist/*', 'build/*'])
+    .describe('List of file patterns to exclude from the diff'),
 })
 
 /**
@@ -52,6 +57,7 @@ export function getConfig(): Config {
     anthropic: {
       apiKey: process.env.ANTHROPIC_API_KEY,
     },
+    excludedFilePatterns: process.env.EXCLUDED_FILE_PATTERNS,
   }
 
   try {

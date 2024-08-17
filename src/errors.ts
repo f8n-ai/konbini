@@ -38,16 +38,6 @@ export class GitError extends Error {
 }
 
 /**
- * Custom error for Anthropic API-related issues.
- */
-export class AnthropicError extends Error {
-  constructor(message: string) {
-    super(chalk.red(message))
-    this.name = chalk.red('AnthropicError')
-  }
-}
-
-/**
  * Custom error for GitHub API-related issues.
  */
 export class GitHubError extends Error {

@@ -14,7 +14,7 @@
  * @module main
  */
 
-import { generateCommitMessage } from './anthropic/commit-message'
+import { generateCommitMessage } from './llms/commit-message'
 import { getConfig } from './config'
 import { createCommit, stageChanges } from './git/commit'
 import { getGitDiff } from './git/diff'

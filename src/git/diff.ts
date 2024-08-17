@@ -16,9 +16,7 @@ import simpleGit, { SimpleGit } from 'simple-git'
 import { GitError } from '../errors'
 import logger from '../logger'
 import { GitDiff } from '../types'
-
-// List of file patterns to exclude from the diff
-const EXCLUDED_FILE_PATTERNS = ['yarn.lock', 'package-lock.json', '*.log', '*.min.js', '*.min.css', 'dist/*', 'build/*']
+import { getConfig } from '../config'
 
 /**
  * Retrieves the Git diff of staged changes.
@@ -60,7 +58,8 @@ export async function getGitDiff(): Promise<GitDiff> {
  */
 function filterFiles(files: string[]): string[] {
   return files.filter(
-    (file) => !EXCLUDED_FILE_PATTERNS.some((pattern) => new RegExp(`^${pattern.replace(/\*/g, '.*')}$`).test(file)),
+    (file) =>
+      !getConfig().excludedFilePatterns.some((pattern) => new RegExp(`^${pattern.replace(/\*/g, '.*')}$`).test(file)),
   )
 }
 
