@@ -1,14 +1,18 @@
 {
   "name": "@f8n-ai/konbini",
+  "version": "0.0.1",
   "module": "src/main.ts",
   "type": "module",
+  "files": ["dist"],
   "scripts": {
-    "dev": "bun --watch src/main.ts"
+    "build": "bun build src/main.ts --outdir dist",
+    "dev": "bun run build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@types/bun": "latest",
-    "@types/yaml": "^1.9.7"
+    "@types/yaml": "^1.9.7",
+    "tsup": "^8.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -24,7 +28,5 @@
     "yaml": "^2.5.0",
     "zod": "^3.23.8"
   },
-  "trustedDependencies": [
-    "@biomejs/biome"
-  ]
+  "trustedDependencies": ["@biomejs/biome"]
 }

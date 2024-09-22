@@ -25,7 +25,6 @@ const ConfigSchema = z.object({
   github: z.object({
     token: z.string().min(1, 'GitHub token is required'),
   }),
-  mod
   anthropic: z.object({
     apiKey: z.string().min(1, 'Anthropic API key is required'),
   }),

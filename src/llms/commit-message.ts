@@ -11,40 +11,55 @@
  * @module anthropic/commit-message
  */
 
-import { CommitMessageParams, GeneratedCommitMessage } from '../types'
-import { anthropic, AnthropicError } from './anthropic'
 import logger from '../logger'
 import { KONBINI_PROMPTS } from '../prompts/prompts'
+import { CommitMessageParams, GeneratedCommitMessage } from '../types'
+import { AnthropicError, anthropic } from './anthropic'
 
 /**
  * Generates a commit message using the Anthropic API.
  * @param params - Parameters for generating the commit message, including diff and issue data.
- * @returns A Promise that resolves to a GeneratedCommitMessage object.
+ * @returns A Promise that resolves to a list of GeneratedCommitMessage objects for both English and Chinese.
  * @throws {AnthropicError} If there's an error generating the commit message.
  */
-export async function generateCommitMessage(params: CommitMessageParams): Promise<GeneratedCommitMessage> {
+export async function generateCommitMessage(
+  params: CommitMessageParams,
+): Promise<{ en: GeneratedCommitMessage; cn: GeneratedCommitMessage }> {
   try {
     logger.info('Generating commit message using Anthropic API...')
 
-    const prompt = constructPrompt(params)
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20240620',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1000,
-    })
+    const promptEn = constructPrompt(params, 'en')
+    const promptCn = constructPrompt(params, 'cn')
+    const [responseEn, responseCn] = await Promise.all([
+      anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20240620',
+        messages: [{ role: 'user', content: promptEn }],
+        max_tokens: 1000,
+      }),
+      anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20240620',
+        messages: [{ role: 'user', content: promptCn }],
+        max_tokens: 1000,
+      }),
+    ])
 
-    if (response.content[0].type !== 'text') {
+    if (responseEn.content[0].type !== 'text' || responseCn.content[0].type !== 'text') {
       throw new AnthropicError('Unexpected response type from Anthropic API')
     }
 
-    const generatedMessage = parseResponse(response.content[0].text)
+    const generatedMessageEn = parseResponse(responseEn.content[0].text)
+    const generatedMessageCn = parseResponse(responseCn.content[0].text)
     logger.info('Commit message generated successfully')
     logger.info(`Generated commit message:
-${generatedMessage.subject}
+🇺🇸 ${generatedMessageEn.subject}
 
-${generatedMessage.body}
+${generatedMessageEn.body}
+
+🇨🇳 ${generatedMessageCn.subject}
+
+${generatedMessageCn.body}
 `)
-    return generatedMessage
+    return { en: generatedMessageEn, cn: generatedMessageCn }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error(`Failed to generate commit message: ${errorMessage}`)
@@ -57,14 +72,27 @@ ${generatedMessage.body}
  * @param params - Parameters for generating the commit message.
  * @returns The constructed prompt string.
  */
-function constructPrompt(params: CommitMessageParams): string {
-  let prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content)
+function constructPrompt(params: CommitMessageParams, language: 'en' | 'cn'): string {
+  let prompt = ''
 
-  // Add information about changed files
-  prompt += `\n\nChanged files:\n${params.diff.files.join('\n')}`
+  switch (language) {
+    case 'en':
+      prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content)
+      // Add information about changed files
+      prompt += `\n\nChanged files:\n${params.diff.files.join('\n')}`
 
-  // Add summary of additions and deletions
-  prompt += `\n\nSummary of changes:\n${params.diff.additions} additions, ${params.diff.deletions} deletions`
+      // Add summary of additions and deletions
+      prompt += `\n\nSummary of changes:\n${params.diff.additions} additions, ${params.diff.deletions} deletions`
+      break
+    case 'cn':
+      prompt = KONBINI_PROMPTS.generateCommitMessageCn(params.diff.content)
+      // 添加已修改文件的列表
+      prompt += `\n\n已修改的文件列表：\n${params.diff.files.join('\n')}`
+
+      // 添加代码变更的统计摘要
+      prompt += `\n\n代码变更统计：\n新增 ${params.diff.additions} 行，删除 ${params.diff.deletions} 行`
+      break
+  }
 
   return prompt
 }

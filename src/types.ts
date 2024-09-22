@@ -36,28 +36,6 @@ export interface GitDiff {
 }
 
 /**
- * Represents the type of GitHub authentication.
- */
-type GitHubAuthType = 'ssh' | 'token'
-
-/**
- * Represents GitHub credentials.
- */
-export interface GitHubCredentials {
-  type: GitHubAuthType
-  value: string
-}
-
-/**
- * Represents a comment on a GitHub issue
- */
-export interface GitHubComment {
-  id: string
-  body: string
-  user: string
-}
-
-/**
  * Parameters for generating a commit message
  */
 export interface CommitMessageParams {

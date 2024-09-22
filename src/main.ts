@@ -14,19 +14,15 @@
  * @module main
  */
 
-import { generateCommitMessage } from './llms/commit-message'
-import { getConfig } from './config'
 import { createCommit, stageChanges } from './git/commit'
 import { getGitDiff } from './git/diff'
 import { getGitStatus } from './git/status'
+import { generateCommitMessage } from './llms/commit-message'
 import logger from './logger'
 import { confirm } from './prompts/prompts'
 
 async function main() {
   try {
-    const config = getConfig()
-    logger.info('Configuration loaded successfully')
-
     const status = await getGitStatus()
     if (status.needsStaging) {
       const shouldStage = await confirm('Stage all changes?')
@@ -42,7 +38,9 @@ async function main() {
 
     const useGeneratedMessage = await confirm('Use this commit message?')
     if (useGeneratedMessage) {
-      await createCommit([commitMessage.subject, commitMessage.body].join('\n\n'))
+      await createCommit(
+        [commitMessage.en.subject, commitMessage.en.body, commitMessage.cn.subject, commitMessage.cn.body].join('\n\n'),
+      )
       logger.info('Changes committed')
     } else {
       logger.info('Commit cancelled by user')

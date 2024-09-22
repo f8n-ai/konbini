@@ -38,7 +38,7 @@ export async function promptUser(question: string): Promise<string> {
  * @returns A Promise that resolves to a boolean indicating the user's response.
  */
 export async function confirm(message: string): Promise<boolean> {
-  return await inquirerConfirm({ message: chalk.yellow(message) })
+  return await inquirerConfirm({ message: chalk.blue(message) })
 }
 
 /**
@@ -102,7 +102,49 @@ Implement [feature/fix] to address [core issue] (adjust to fit 80 characters)
 • [Key technical detail or implication #3]
 `
   },
+  generateCommitMessageCn: (diff: string): string => {
+    return `
+人类：请根据以下代码差异生成一个Git提交说明。分析变更并以John Carmack的风格创建一个提交说明，包含80字符的简洁描述和最多3个对后续开发最有价值的要点。格式如下：
 
+[80字符简洁描述]
+
+• [核心要点1]
+• [核心要点2]
+• [核心要点3]
+
+差异内容：
+${diff}
+
+A: 了解。我将分析提供的代码差异，以John Carmack的风格生成一个Git提交说明。示例如下：
+
+[功能/修复]: [核心变更的简明描述]（严格控制在80字符以内）
+
+• [关键技术变更或影响1]
+• [关键技术变更或影响2]
+• [关键技术变更或影响3]
+
+Final Translation:
+
+人类：请根据以下代码差异生成一个Git提交说明。分析变更并以John Carmack的风格创建一个提交说明，包含80字符的简洁描述和最多3个对后续开发最有价值的要点。格式如下：
+
+[80字符简洁描述]
+
+• [核心要点1]
+• [核心要点2]
+• [核心要点3]
+
+差异内容：
+${diff}
+
+A: 了解。我将分析提供的代码差异，以John Carmack的风格生成一个Git提交说明。示例如下：
+
+[功能/修复]: [核心变更的简明描述]（严格控制在80字符以内）
+
+• [关键技术变更或影响1]
+• [关键技术变更或影响2]
+• [关键技术变更或影响3]
+`
+  },
   translateCommitMessageToJp: (generatedMessage: string): string => {
     return `
 あなたの任務は、英語から日本語への翻訳を行うことです。

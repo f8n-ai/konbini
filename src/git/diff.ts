@@ -13,10 +13,10 @@
  */
 
 import simpleGit, { SimpleGit } from 'simple-git'
+import { getConfig } from '../config'
 import { GitError } from '../errors'
 import logger from '../logger'
 import { GitDiff } from '../types'
-import { getConfig } from '../config'
 
 /**
  * Retrieves the Git diff of staged changes.

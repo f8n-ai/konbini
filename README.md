@@ -2,7 +2,10 @@
 
 ## Overview
 
-This project is a TypeScript-based tool that leverages AI to automatically generate meaningful and descriptive commit messages for your Git repositories. By analyzing the differences in your code and understanding the context of your changes, it produces high-quality commit messages that save time and improve the overall quality of your version control history.
+This project is a TypeScript-based tool that leverages AI to automatically generate meaningful and descriptive commit
+messages for your Git repositories. By analyzing the differences in your code and understanding the context of your
+changes, it produces high-quality commit messages that save time and improve the overall quality of your version
+control history.
 
 ## Features
 
