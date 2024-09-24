@@ -22,7 +22,7 @@ import logger from '../logger'
 export async function promptUser(question: string): Promise<string> {
   try {
     logger.info(`Prompting user: ${question}`)
-    const answer = await input({ message: chalk.cyan(question) })
+    const answer = await input({ message: `${chalk.cyan(question)} ` })
     logger.info('User input received')
     return answer.trim()
   } catch (error) {
@@ -80,69 +80,142 @@ export function showProgressBar(progress: number, total: number): void {
 }
 
 export const KONBINI_PROMPTS = {
-  generateCommitMessageEn: (diff: string): string => {
+  generateCommitMessageEn: (diff: string, engineerMessage: string): string => {
+    let stepCounter = 1
+
     return `
-Human: Generate a commit message based on the following code diff. Analyze the information and create a commit message in the style of John Carmack with an 80-character description and up to 3 bullet points of the most valuable info for future engineers. Use this format:
+Your goal (OVERALL_GOAL) is to generate a commit message for the following code diff that someone who read it would be likely to describe as
+"the best commit message I have ever read in my entire career as a software engineer".
 
-[80-character description]
-
-• [Key point 1]
-• [Key point 2]
-• [Key point 3]
-
-Diff:
+<code-diff>
 ${diff}
+</code-diff>
 
-A: Certainly! I'll analyze the provided code diff to generate a commit message in John Carmack's style. Here's an example commit message based on the information:
+How would someone like John Carmack, known for writing in a style that's objective, straight to the point, zero fluff,
+think about this code diff and then write a commit message that satisfies OVERALL_GOAL, given the following instructions:
 
-Implement [feature/fix] to address [core issue] (adjust to fit 80 characters)
+John, please follow the following steps in order to write this commit message:
 
-• [Key technical detail or implication #1]
-• [Key technical detail or implication #2]
-• [Key technical detail or implication #3]
+${
+  engineerMessage
+    ? `
+${stepCounter++}. Look at the message written by the engineer who originally authored this commit - this is their "raw" explanation for the rationale for this change and the implicit/explicit decisions they made.
+
+<engineer-message>
+${engineerMessage}
+</engineer-message>
+
+Based on this input, explicitly provide your observations, chain of thought, and conclusions based on what the engineer said.
+Please be sure to put this in an XML block tag called <observations-about-engineer-message>.
+`
+    : ''
+}
+
+${stepCounter++}. Carefully examine the code changes${engineerMessage ? `, and be sure to consider taking into account the engineer's original message as well as your observations about it, in order to be able to better reason about the high level context for each change you see in the actual code.` : ''}.
+
+When doing this code examination, explicitly provide your observations, chain of thought, and conclusions.
+
+Please be sure to put this in an XML block tag called <observations-about-code-changes>.
+
+${stepCounter++}. List up all of the pieces of information using a unique ID for each information item. It should be a list of all the information items that we could write in the commit message.
+
+Please be sure to put this in an XML block tag called <list-of-information-items>.
+
+After we've written them, use observation, chain of thought, and conclusion to list up a reasoning -> info item ID for all the info item IDs that we consider to be unnecessary to include in the commit message.
+
+Please be sure to put this in an XML block tag called <reasoning-for-omitting-info-items>.
+
+Finally, list up the unique IDs, in order of priority, for the information items that you will be including in your commit message.
+
+Please be sure to put this in an XML block tag called <list-of-info-item-ids-in-commit-message>.
+
+${stepCounter++}. Generate a commit message for the contents of <list-of-info-item-ids-in-commit-message>
+
+Make sure to take into account:
+
+${
+  engineerMessage
+    ? `
+- The high level context from step one as well as your thoughts about it from <observations-about-engineer-message>
+`
+    : ''
+}
+- the actual changes from step two and your thoughts about that from <observations-about-code-changes>
+
+The format for the commit message should be like returned in an XML block tag called <commit-message> and be formatted according to the guidelines below:
+
+<commit-message>
+[COMMIT_DESCRIPTION: A description of this commit that that an engineer unfamiliar with the code changes can read and get the most important information.]
+The length of COMMIT_DESCRIPTION should be no more than 120 characters.
+
+(internal note for you, do not include this message in your response. For the EXTENDED_DESCRIPTION block below, the bar for whether to even write it is should be high. Only write it if this commit is very nuanced and contains a lot of context that is not obvious from the diff alone.
+[EXTENDED_DESCRIPTION: An addendum for the commit description - main purpose is providing additional context and details for an engineer who saw the original commit description but now wants to more deeply investigate this commit and understand more about it.]
+
+[KEY_POINTS: A list of the most important information items from <list-of-information-items> that should be included in the commit message.]
+Use your own judgment for how many KEY_POINTS should be included but consider that you probably don't want to have more than five or six.
+</commit-message>
+
+Please note that all the "section prefixes like COMMIT_DESCRIPTION, etc should be included - they are just placeholders for the different sections of the commit message and should be replaced with the actual content.
 `
   },
-  generateCommitMessageCn: (diff: string): string => {
+  generateCommitMessageCn: (diff: string, engineerMessage: string): string => {
     return `
-人类：请根据以下代码差异生成一个Git提交说明。分析变更并以John Carmack的风格创建一个提交说明，包含80字符的简洁描述和最多3个对后续开发最有价值的要点。格式如下：
+你的目标（总体目标）是为以下代码diff生成一个commit消息。这个消息应该能让读者认为它是"我整个软件工程师职业生涯中见过的最佳commit消息"。
 
-[80字符简洁描述]
-
-• [核心要点1]
-• [核心要点2]
-• [核心要点3]
-
-差异内容：
+<代码diff>
 ${diff}
+</代码diff>
 
-A: 了解。我将分析提供的代码差异，以John Carmack的风格生成一个Git提交说明。示例如下：
+请以约翰·卡马克（John Carmack，著名游戏开发者）的风格 —— 客观、直接、简洁 —— 来分析这个代码diff，并写出一个满足总体目标的commit消息。请按以下步骤进行：
 
-[功能/修复]: [核心变更的简明描述]（严格控制在80字符以内）
+1. 查看原作者的commit消息。这是他们对变更理由和决策的原始解释。
 
-• [关键技术变更或影响1]
-• [关键技术变更或影响2]
-• [关键技术变更或影响3]
+<工程师信息>
+${engineerMessage}
+</工程师信息>
 
-Final Translation:
+请根据这些信息，明确提供你的观察、思维过程和结论。
+将你的分析放在 <关于工程师信息的观察> 标签中。
 
-人类：请根据以下代码差异生成一个Git提交说明。分析变更并以John Carmack的风格创建一个提交说明，包含80字符的简洁描述和最多3个对后续开发最有价值的要点。格式如下：
+2. 仔细检查代码变更，确保考虑到工程师的原始消息以及你对它的观察，以便更好地推理每个你在实际代码中看到的变更的高层次上下文。
 
-[80字符简洁描述]
+在进行代码检查时，明确提供你的观察、思维过程和结论。
 
-• [核心要点1]
-• [核心要点2]
-• [核心要点3]
+请将此放在 <关于代码变更的观察> XML标签中。
 
-差异内容：
-${diff}
+3. 列出所有信息项，为每个信息项使用唯一ID。这应该是我们可能在commit消息中写入的所有信息项的列表。
 
-A: 了解。我将分析提供的代码差异，以John Carmack的风格生成一个Git提交说明。示例如下：
+请将此放在 <信息项列表> XML标签中。
 
-[功能/修复]: [核心变更的简明描述]（严格控制在80字符以内）
+列出后，使用观察、思维链和结论来列出推理 -> 信息项ID，用于我们认为不必包含在commit消息中的所有信息项ID。
 
-• [关键技术变更或影响1]
-• [关键技术变更或影响2]
-• [关键技术变更或影响3]
+请将此放在 <省略信息项的理由> XML标签中。
+
+最后，按优先顺序列出你将在commit消息中包含的信息项的唯一ID。
+
+请将此放在 <commit消息中包含的信息项ID列表> XML标签中。
+
+4. 根据 <commit消息中包含的信息项ID列表> 的内容生成commit消息
+
+生成commit消息时，请综合考虑以下两点：
+a. 第一步中分析的高层次上下文，结合你在 <关于工程师信息的观察> 标签中记录的思考
+b. 第二步中详细审查的代码实际更改，以及你在 <关于代码变更的观察> 标签中
+
+的分析结果
+
+commit消息应按以下格式在 <提交信息> XML标签中返回，并遵循下述指南：
+
+<提交信息>
+[提交描述: 一个不熟悉代码变更的工程师能够读懂并获取最重要信息的描述。]
+提交描述的长度不应超过120个字符。
+
+[详细说明: 对提交描述的补充 - 主要目的是为看过原始提交描述但现在想深入调查此提交并了解更多信息的工程师提供额外的上下文和详细信息。]
+
+[要点: 来自 <信息项列表> 中应包含在commit消息中的最重要信息项列表。]
+使用你的判断来决定包含多少个要点，但考虑到可能不希望超过五到六个。
+</提交信息>
+
+请注意，所有的"部分前缀"如提交描述、详细说明等都应包括在内 - 它们只是commit消息不同部分的占位符，应替换为实际内容。
 `
   },
   translateCommitMessageToJp: (generatedMessage: string): string => {

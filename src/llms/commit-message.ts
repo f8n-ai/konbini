@@ -77,7 +77,7 @@ function constructPrompt(params: CommitMessageParams, language: 'en' | 'cn'): st
 
   switch (language) {
     case 'en':
-      prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content)
+      prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content, params.userCommitDescription)
       // Add information about changed files
       prompt += `\n\nChanged files:\n${params.diff.files.join('\n')}`
 
@@ -85,7 +85,7 @@ function constructPrompt(params: CommitMessageParams, language: 'en' | 'cn'): st
       prompt += `\n\nSummary of changes:\n${params.diff.additions} additions, ${params.diff.deletions} deletions`
       break
     case 'cn':
-      prompt = KONBINI_PROMPTS.generateCommitMessageCn(params.diff.content)
+      prompt = KONBINI_PROMPTS.generateCommitMessageCn(params.diff.content, params.userCommitDescription)
       // 添加已修改文件的列表
       prompt += `\n\n已修改的文件列表：\n${params.diff.files.join('\n')}`
 
@@ -103,11 +103,29 @@ function constructPrompt(params: CommitMessageParams, language: 'en' | 'cn'): st
  * @returns A GeneratedCommitMessage object.
  */
 function parseResponse(response: string): GeneratedCommitMessage {
-  const lines = response.trim().split('\n')
+  const message = extractAndFormatCommitMessage(response)
+
+  const lines = message.trim().split('\n')
   const subject = lines[0]
   const body = lines.slice(1).join('\n').trim()
 
   return { subject, body }
+}
+
+function extractAndFormatCommitMessage(input: string): string {
+  // Extract content between <commit-message> tags
+  const match = input.match(/<commit-message>([\s\S]*?)<\/commit-message>/)
+  if (!match) return 'No commit message found'
+
+  let message = match[1].trim()
+
+  // Remove uppercase headings
+  message = message.replace(/^[A-Z_]+:\s*/gm, '')
+
+  // Replace bullet points with dashes
+  message = message.replace(/^[•●]/gm, '-')
+
+  return message.trim()
 }
 
 /**

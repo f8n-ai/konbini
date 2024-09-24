@@ -19,7 +19,7 @@ import { getGitDiff } from './git/diff'
 import { getGitStatus } from './git/status'
 import { generateCommitMessage } from './llms/commit-message'
 import logger from './logger'
-import { confirm } from './prompts/prompts'
+import { confirm, promptUser } from './prompts/prompts'
 
 async function main() {
   try {
@@ -33,7 +33,18 @@ async function main() {
     }
 
     const diff = await getGitDiff()
-    const commitMessage = await generateCommitMessage({ diff })
+
+    /**
+     * Prompt the user to optionally provide a raw "brain dump" of what this commit is about
+     * This is useful for providing context to the LLM, but is optional.
+     * So a a user is told that they can just press Enter to skip it.
+     */
+    const userCommitDescription =
+      (await promptUser(
+        'Describe this commit like you would to a colleague you were talking to in person (optional, hit Enter to skip):',
+      )) || null
+
+    const commitMessage = await generateCommitMessage({ diff, userCommitDescription })
     logger.info('Commit message generated')
 
     const useGeneratedMessage = await confirm('Use this commit message?')

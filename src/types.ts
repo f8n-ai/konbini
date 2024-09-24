@@ -40,6 +40,7 @@ export interface GitDiff {
  */
 export interface CommitMessageParams {
   diff: GitDiff
+  userCommitDescription: string | null
 }
 
 /**
