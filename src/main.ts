@@ -49,9 +49,7 @@ async function main() {
 
     const useGeneratedMessage = await confirm('Use this commit message?')
     if (useGeneratedMessage) {
-      await createCommit(
-        [commitMessage.en.subject, commitMessage.en.body, commitMessage.cn.subject, commitMessage.cn.body].join('\n\n'),
-      )
+      await createCommit([commitMessage.en.subject, commitMessage.en.body].join('\n\n'))
       logger.info('Changes committed')
     } else {
       logger.info('Commit cancelled by user')

@@ -11,8 +11,9 @@
  * @module anthropic/commit-message
  */
 
+import { stream } from 'winston'
 import logger from '../logger'
-import { KONBINI_PROMPTS } from '../prompts/prompts'
+import { KONBINI_PROMPT } from '../prompts/prompts'
 import { CommitMessageParams, GeneratedCommitMessage } from '../types'
 import { AnthropicError, anthropic } from './anthropic'
 
@@ -22,44 +23,57 @@ import { AnthropicError, anthropic } from './anthropic'
  * @returns A Promise that resolves to a list of GeneratedCommitMessage objects for both English and Chinese.
  * @throws {AnthropicError} If there's an error generating the commit message.
  */
-export async function generateCommitMessage(
-  params: CommitMessageParams,
-): Promise<{ en: GeneratedCommitMessage; cn: GeneratedCommitMessage }> {
+export async function generateCommitMessage(params: CommitMessageParams): Promise<{ en: GeneratedCommitMessage }> {
   try {
     logger.info('Generating commit message using Anthropic API...')
 
     const promptEn = constructPrompt(params, 'en')
-    const promptCn = constructPrompt(params, 'cn')
-    const [responseEn, responseCn] = await Promise.all([
-      anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20240620',
-        messages: [{ role: 'user', content: promptEn }],
-        max_tokens: 1000,
-      }),
-      anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20240620',
-        messages: [{ role: 'user', content: promptCn }],
-        max_tokens: 1000,
-      }),
-    ])
+    logger.info(`Prompt: ${promptEn}`)
+    const responseEn = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-latest',
+      messages: [{ role: 'user', content: promptEn }],
+      max_tokens: 4096,
+    })
 
-    if (responseEn.content[0].type !== 'text' || responseCn.content[0].type !== 'text') {
+    if (responseEn.content[0].type !== 'text') {
       throw new AnthropicError('Unexpected response type from Anthropic API')
     }
 
-    const generatedMessageEn = parseResponse(responseEn.content[0].text)
-    const generatedMessageCn = parseResponse(responseCn.content[0].text)
+    const promptNarrativeEn = KONBINI_PROMPT.generateNarrativeBasedCommitMessageEn(
+      responseEn.content[0].text,
+      params.userCommitDescription,
+    )
+
+    const responseNarrativeEn = await anthropic.messages.stream({
+      model: 'claude-3-5-sonnet-latest',
+      system: promptNarrativeEn.systemPrompt,
+      messages: [{ role: 'user', content: promptNarrativeEn.userPrompt }],
+      max_tokens: 2048,
+      temperature: 0.3,
+    })
+
+    for await (const event of responseNarrativeEn) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        process.stdout.write(event.delta.text)
+      }
+    }
+
+    const message = await responseNarrativeEn.finalText()
+
+    logger.info(`
+Narrative response:
+
+${message}
+`)
+
+    const generatedMessageEn = parseResponse(message, promptNarrativeEn.tagWithCommitMessage)
     logger.info('Commit message generated successfully')
     logger.info(`Generated commit message:
-🇺🇸 ${generatedMessageEn.subject}
+${generatedMessageEn.subject}
 
 ${generatedMessageEn.body}
-
-🇨🇳 ${generatedMessageCn.subject}
-
-${generatedMessageCn.body}
 `)
-    return { en: generatedMessageEn, cn: generatedMessageCn }
+    return { en: generatedMessageEn }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error(`Failed to generate commit message: ${errorMessage}`)
@@ -72,27 +86,15 @@ ${generatedMessageCn.body}
  * @param params - Parameters for generating the commit message.
  * @returns The constructed prompt string.
  */
-function constructPrompt(params: CommitMessageParams, language: 'en' | 'cn'): string {
+function constructPrompt(params: CommitMessageParams, language: 'en'): string {
   let prompt = ''
 
-  switch (language) {
-    case 'en':
-      prompt = KONBINI_PROMPTS.generateCommitMessageEn(params.diff.content, params.userCommitDescription)
-      // Add information about changed files
-      prompt += `\n\nChanged files:\n${params.diff.files.join('\n')}`
+  prompt = KONBINI_PROMPT.generateCommitMessageEn(params.diff.content, params.userCommitDescription)
+  // Add information about changed files
+  prompt += `\n\nChanged files:\n${params.diff.files.join('\n')}`
 
-      // Add summary of additions and deletions
-      prompt += `\n\nSummary of changes:\n${params.diff.additions} additions, ${params.diff.deletions} deletions`
-      break
-    case 'cn':
-      prompt = KONBINI_PROMPTS.generateCommitMessageCn(params.diff.content, params.userCommitDescription)
-      // 添加已修改文件的列表
-      prompt += `\n\n已修改的文件列表：\n${params.diff.files.join('\n')}`
-
-      // 添加代码变更的统计摘要
-      prompt += `\n\n代码变更统计：\n新增 ${params.diff.additions} 行，删除 ${params.diff.deletions} 行`
-      break
-  }
+  // Add summary of additions and deletions
+  prompt += `\n\nSummary of changes:\n${params.diff.additions} additions, ${params.diff.deletions} deletions`
 
   return prompt
 }
@@ -102,8 +104,9 @@ function constructPrompt(params: CommitMessageParams, language: 'en' | 'cn'): st
  * @param response - The raw response text from the Anthropic API.
  * @returns A GeneratedCommitMessage object.
  */
-function parseResponse(response: string): GeneratedCommitMessage {
-  const message = extractAndFormatCommitMessage(response)
+function parseResponse(response: string, tagWithCommitMessage: string): GeneratedCommitMessage {
+  logger.info(`Response: ${response}`)
+  const message = extractAndFormatCommitMessage(response, tagWithCommitMessage)
 
   const lines = message.trim().split('\n')
   const subject = lines[0]
@@ -112,18 +115,18 @@ function parseResponse(response: string): GeneratedCommitMessage {
   return { subject, body }
 }
 
-function extractAndFormatCommitMessage(input: string): string {
-  // Extract content between <commit-message> tags
-  const match = input.match(/<commit-message>([\s\S]*?)<\/commit-message>/)
-  if (!match) return 'No commit message found'
-
-  let message = match[1].trim()
-
+function extractAndFormatCommitMessage(input: string, tagWithCommitMessage: string): string {
   // Remove uppercase headings
-  message = message.replace(/^[A-Z_]+:\s*/gm, '')
+  let message = input.replace(/^[A-Z_]+:\s*/gm, '')
 
   // Replace bullet points with dashes
   message = message.replace(/^[•●]/gm, '-')
+
+  // Extract the commit message from the tag
+  const commitMessage = message.match(new RegExp(`<${tagWithCommitMessage}>(.*?)<\/${tagWithCommitMessage}>`, 's'))
+  if (commitMessage) {
+    message = commitMessage[1]
+  }
 
   return message.trim()
 }

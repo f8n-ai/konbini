@@ -23,7 +23,7 @@ import { z } from 'zod'
  */
 const ConfigSchema = z.object({
   github: z.object({
-    token: z.string().min(1, 'GitHub token is required'),
+    token: z.string().optional(),
   }),
   anthropic: z.object({
     apiKey: z.string().min(1, 'Anthropic API key is required'),
@@ -49,7 +49,7 @@ export type Config = z.infer<typeof ConfigSchema>
 export function getConfig(): Config {
   dotenv.config()
 
-  const config = {
+  return ConfigSchema.parse({
     github: {
       token: process.env.GITHUB_TOKEN,
     },
@@ -57,14 +57,5 @@ export function getConfig(): Config {
       apiKey: process.env.ANTHROPIC_API_KEY,
     },
     excludedFilePatterns: process.env.EXCLUDED_FILE_PATTERNS,
-  }
-
-  try {
-    return ConfigSchema.parse(config)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      console.error('Invalid configuration:', error.errors)
-    }
-    throw new Error('Configuration validation failed')
-  }
+  })
 }
