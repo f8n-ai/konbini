@@ -60,19 +60,11 @@ export async function generateCommitMessage(params: CommitMessageParams): Promis
 
     const message = await responseNarrativeEn.finalText()
 
-    logger.info(`
-Narrative response:
-
-${message}
-`)
+    logger.info(`\nNarrative response:\n\n${message}\n`)
 
     const generatedMessageEn = parseResponse(message, promptNarrativeEn.tagWithCommitMessage)
     logger.info('Commit message generated successfully')
-    logger.info(`Generated commit message:
-${generatedMessageEn.subject}
-
-${generatedMessageEn.body}
-`)
+    logger.info(`Generated commit message:\n${generatedMessageEn.subject}\n\n${generatedMessageEn.body}\n`)
     return { en: generatedMessageEn }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -129,31 +121,4 @@ function extractAndFormatCommitMessage(input: string, tagWithCommitMessage: stri
   }
 
   return message.trim()
-}
-
-/**
- * Evaluates the quality of a generated commit message.
- * @param message - The generated commit message to evaluate.
- * @returns A score between 0 and 1 indicating the quality of the message.
- */
-export function evaluateCommitMessage(message: GeneratedCommitMessage): number {
-  let score = 0
-
-  // Check if subject line is present and not too long
-  if (message.subject && message.subject.length <= 50) {
-    score += 0.5
-  }
-
-  // Check if body is present and provides additional context
-  if (message.body && message.body.length > 0) {
-    score += 0.3
-  }
-
-  // Check for keywords that indicate a good commit message
-  const keywords = ['fix', 'feature', 'refactor', 'update', 'improve', 'add', 'remove', 'change']
-  if (keywords.some((keyword) => message.subject.toLowerCase().includes(keyword))) {
-    score += 0.2
-  }
-
-  return Math.min(score, 1) // Ensure score doesn't exceed 1
 }
