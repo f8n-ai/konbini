@@ -31,5 +31,5 @@
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.23.8"
   },
-  "trustedDependencies": ["@biomejs/biome"]
+  "trustedDependencies": ["@biomejs/biome", "@scarf/scarf", "esbuild"]
 }

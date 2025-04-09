@@ -24,6 +24,8 @@ const API_PROVIDER_NAME_TO_ENV_KEY = {
 }
 
 import path from 'node:path'
+import fs from 'node:fs'
+import os from 'node:os'
 import { createCommit, stageChanges } from './git/commit'
 import { getGitDiff } from './git/diff'
 import { getGitStatus } from './git/status'
