@@ -27,44 +27,63 @@ export async function generateCommitMessage(params: CommitMessageParams): Promis
   try {
     logger.info('Generating commit message using Anthropic API...')
 
+    let thinkingState: 'not-started' | 'started' | 'finished' = 'not-started'
+
     const promptEn = constructPrompt(params, 'en')
     logger.info(`Prompt: ${promptEn}`)
-    const responseEn = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-latest',
+    const responseEn = anthropic.messages.stream({
+      model: 'claude-3-7-sonnet-latest',
+      thinking: { type: 'enabled', budget_tokens: 1024 },
       messages: [{ role: 'user', content: promptEn }],
       max_tokens: 4096,
+    }).on('thinking', (thinking) => {
+      if (thinkingState === 'not-started') {
+        console.log('Thinking:\n---------');
+        thinkingState = 'started';
+      }
+
+      process.stdout.write(thinking);
+    })
+    .on('text', (text) => {
+      if (thinkingState !== 'finished') {
+        console.log('\n\nText:\n-----');
+        thinkingState = 'finished';
+      }
+      process.stdout.write(text);
     })
 
-    if (responseEn.content[0].type !== 'text') {
-      throw new AnthropicError('Unexpected response type from Anthropic API')
-    }
+    const originalResponseEn = await responseEn.finalText()
 
     const promptNarrativeEn = KONBINI_PROMPT.generateNarrativeBasedCommitMessageEn(
-      responseEn.content[0].text,
+      originalResponseEn,
       params.userCommitDescription,
     )
 
-    const responseNarrativeEn = await anthropic.messages.stream({
-      model: 'claude-3-5-sonnet-latest',
+    thinkingState = 'not-started'
+
+    const responseNarrativeEn = anthropic.messages.stream({
+      model: 'claude-3-7-sonnet-latest',
+      thinking: { type: 'enabled', budget_tokens: 1024 },
       system: promptNarrativeEn.systemPrompt,
       messages: [{ role: 'user', content: promptNarrativeEn.userPrompt }],
-      max_tokens: 2048,
-      temperature: 0.3,
+      max_tokens: 4096,
+    }).on('thinking', (thinking) => {
+      if (thinkingState === 'not-started') {
+        console.log('Thinking:\n---------');
+        thinkingState = 'started';
+      }
+
+      process.stdout.write(thinking);
+    })
+    .on('text', (text) => {
+      if (thinkingState !== 'finished') {
+        console.log('\n\nText:\n-----');
+        thinkingState = 'finished';
+      }
+      process.stdout.write(text);
     })
 
-    for await (const event of responseNarrativeEn) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        process.stdout.write(event.delta.text)
-      }
-    }
-
     const message = await responseNarrativeEn.finalText()
-
-    logger.info(`
-Narrative response:
-
-${message}
-`)
 
     const generatedMessageEn = parseResponse(message, promptNarrativeEn.tagWithCommitMessage)
     logger.info('Commit message generated successfully')
