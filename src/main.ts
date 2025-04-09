@@ -14,6 +14,18 @@
  * @module main
  */
 
+const API_PROVIDER_NAME_TO_ENV_KEY = {
+  anthropic: 'ANTHROPIC_API_KEY',
+  openai: 'OPENAI_API_KEY',
+  azure: 'AZURE_API_KEY',
+  gemini: 'GEMINI_API_KEY',
+  groq: 'GROQ_API_KEY',
+  vertexai: 'VERTEXAI_API_KEY',
+}
+
+import path from 'node:path'
+import fs from 'node:fs'
+import os from 'node:os'
 import { createCommit, stageChanges } from './git/commit'
 import { getGitDiff } from './git/diff'
 import { getGitStatus } from './git/status'
@@ -22,6 +34,18 @@ import logger from './logger'
 import { confirm, promptUser } from './prompts/prompts'
 
 async function main() {
+  if (!fs.existsSync(path.join(os.homedir(), '.konbini'))) {
+    logger.info('It seems this is the first time you are running konbini.')
+    logger.info('Based on your environment, you have the following LLM API keys set up:')
+    for (const key in process.env) {
+      if (key.startsWith('ANTHROPIC_API_KEY')) {
+        logger.info(`${key}: ${process.env[key]}`)
+      }
+    }
+    process.exit(1)
+  }
+
+
   try {
     const status = await getGitStatus()
     if (status.needsStaging) {

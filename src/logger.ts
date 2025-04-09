@@ -19,7 +19,36 @@
  * @module logger
  */
 
+import os from 'node:os'
+import fs from 'node:fs'
+import path from 'node:path'
 import winston from 'winston'
+import DailyRotateFile from 'winston-daily-rotate-file';
+
+/**
+ * Get name of the current project out of package.json
+ * 
+ * Go to the root of the project and get the name from package.json
+ * 
+ * Stops when it reaches the user's home directory.
+ */
+async function getProjectName(): Promise<string> {
+  return 'unknown'
+    // let packageJson: { name: string } | null = null
+    // let currentDir = import.meta.dir
+
+    // do {
+    //   try {
+    //     packageJson = await Bun.file(path.resolve(currentDir, 'package.json')).json()
+    //   } catch (error) {
+    //     continue
+    //   }
+    // } while (!packageJson && currentDir !== os.homedir())
+
+    // return packageJson?.name ?? 'unknown'
+}
+
+const projectName = await getProjectName()
 
 const winstonLogger = winston.createLogger({
   level: 'info',
@@ -33,7 +62,14 @@ const winstonLogger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
-    new winston.transports.File({ filename: 'commit-generator.log' }),
+    new DailyRotateFile({
+      filename: `${projectName}-%DATE%.log`,
+      dirname: path.join(os.homedir(), '.konbini'),
+      datePattern: 'YYYY-MM-DD-HH',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d'
+    }),
   ],
 })
 
